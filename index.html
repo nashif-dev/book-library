@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Book Library</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+
+  <style>
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .animate-card-in {
+      animation: slideFadeIn 300ms ease-out;
+    }
+    .animate-toast-in {
+      animation: toastIn 220ms ease-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-sky-50 to-sky-300 text-slate-800">
+
+  <main class="max-w-5xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">📚 Book Library</h1>
+      <p class="mt-1 text-sm text-slate-600">Add, edit, search and manage your books.</p>
+    </header>
+
+    <!-- Form section -->
+    <section class="bg-white shadow-sm rounded-lg p-4 md:p-6 mb-6">
+      <form id="bookForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="return false;" novalidate>
+        <div class="md:col-span-2">
+          <label for="bookName" class="block text-sm font-medium text-slate-700">Book name</label>
+          <input id="bookName" type="text" placeholder="Name of the book"
+                 class="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300" />
+        </div>
+
+        <div>
+          <label for="bookAuthor" class="block text-sm font-medium text-slate-700">Author</label>
+          <input id="bookAuthor" type="text" placeholder="Author name"
+                 class="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300" />
+        </div>
+
+        <div>
+          <label for="bookCategory" class="block text-sm font-medium text-slate-700">Category</label>
+          <select id="bookCategory"
+                  class="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300">
+            <option value="" disabled selected>Select category</option>
+            <option value="Action">Action</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-fiction">Non-fiction</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-3 flex gap-3">
+          <button id="saveBtn" type="button"
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition">
+            Save
+          </button>
+
+          <button id="clearBtn" type="button"
+                  class="px-3 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 transition">Clear</button>
+
+          <div class="ml-auto flex items-center gap-3">
+            <label for="searchInput" class="sr-only">Search books</label>
+            <input id="searchInput" type="search" placeholder="Search by name or author"
+                   class="rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                   aria-label="Search books" />
+
+            <label for="sortSelect" class="sr-only">Sort</label>
+            <select id="sortSelect"
+                    class="rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300">
+              <option value="newest">Newest</option>
+              <option value="name-asc">Name A → Z</option>
+              <option value="name-desc">Name Z → A</option>
+              <option value="author-asc">Author A → Z</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Book list -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3">Your Books</h2>
+      <div id="bookList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- cards inserted here by JS -->
+      </div>
+      <p id="emptyMsg" class="mt-4 text-sm text-slate-500 hidden">No books found. Add your first book above!</p>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 max-w-xs rounded-md bg-white shadow-lg p-3 hidden pointer-events-auto">
+    <div id="toastText" class="text-sm text-slate-800"></div>
+  </div>
+  </div>
+
+  <footer class="mt-10 text-center text-gray-700 text-sm">
+  <p class="mb-2">
+    Developed by 
+    <a href="https://www.instagram.com/nashif.me/" target="_blank" class="font-semibold text-blue-600 hover:text-pink-500 transition">
+      Nashif !
+    </a> 
+  </p>
+  <div class="flex justify-center gap-4">
+    <a href="https://www.linkedin.com/in/nashif-t-587713320" target="_blank" class="hover:text-blue-600 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 inline" viewBox="0 0 24 24">
+        <path d="M20.451 20.451H17.4v-5.568c0-1.328-.025-3.037-1.852-3.037-1.853 0-2.137 1.445-2.137 2.939v5.666H10.36V9.5h2.923v1.496h.04c.408-.774 1.406-1.589 2.895-1.589 3.094 0 3.666 2.037 3.666 4.684v6.36zM5.337 8.004a1.688 1.688 0 1 1 0-3.376 1.688 1.688 0 0 1 0 3.376zM6.79 20.451H3.883V9.5H6.79v10.951zM22.225 0H1.771C.792 0 0 .774 0 1.728v20.543C0 23.226.792 24 1.771 24h20.451C23.208 24 24 23.226 24 22.271V1.728C24 .774 23.208 0 22.225 0z"/>
+      </svg>
+    </a>
+    <a href="https://github.com/nashif-dev" target="_blank" class="hover:text-gray-800 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 inline" viewBox="0 0 24 24">
+        <path d="M12 .297a12 12 0 0 0-3.79 23.406c.6.113.82-.26.82-.577v-2.234c-3.338.726-4.042-1.415-4.042-1.415-.546-1.384-1.333-1.754-1.333-1.754-1.089-.745.083-.729.083-.729 1.205.085 1.838 1.238 1.838 1.238 1.07 1.834 2.807 1.305 3.49.998.108-.776.418-1.305.762-1.605-2.665-.304-5.466-1.333-5.466-5.932 0-1.312.469-2.384 1.236-3.224-.124-.303-.536-1.526.117-3.183 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 6.004 0c2.292-1.552 3.298-1.23 3.298-1.23.655 1.657.243 2.88.12 3.183.77.84 1.236 1.912 1.236 3.224 0 4.61-2.804 5.625-5.475 5.922.43.372.823 1.104.823 2.226v3.293c0 .32.218.694.825.576A12.004 12.004 0 0 0 12 .297z"/>
+      </svg>
+    </a>
+  </div>
+</footer>
+
+    <script src="./script.js"></script>
+
+  </body>
+</html>
