@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Book Library — Tailwind Edition</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Small custom keyframes for card and toast animations */
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .animate-card-in {
+      animation: slideFadeIn 300ms ease-out;
+    }
+    .animate-toast-in {
+      animation: toastIn 220ms ease-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-sky-50 to-sky-300 text-slate-800">
+
+  <main class="max-w-5xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">📚 Book Library</h1>
+      <p class="mt-1 text-sm text-slate-600">Add, edit, search and manage your books.</p>
+    </header>
+
+    <!-- Form section -->
+    <section class="bg-white shadow-sm rounded-lg p-4 md:p-6 mb-6">
+      <form id="bookForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="return false;" novalidate>
+        <div class="md:col-span-2">
+          <label for="bookName" class="block text-sm font-medium text-slate-700">Book name</label>
+          <input id="bookName" type="text" placeholder="Name of the book"
+                 class="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300" />
+        </div>
+
+        <div>
+          <label for="bookAuthor" class="block text-sm font-medium text-slate-700">Author</label>
+          <input id="bookAuthor" type="text" placeholder="Author name"
+                 class="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300" />
+        </div>
+
+        <div>
+          <label for="bookCategory" class="block text-sm font-medium text-slate-700">Category</label>
+          <select id="bookCategory"
+                  class="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300">
+            <option value="" disabled selected>Select category</option>
+            <option value="Action">Action</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-fiction">Non-fiction</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-3 flex gap-3">
+          <button id="saveBtn" type="button"
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition">
+            Save
+          </button>
+
+          <button id="clearBtn" type="button"
+                  class="px-3 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 transition">Clear</button>
+
+          <div class="ml-auto flex items-center gap-3">
+            <label for="searchInput" class="sr-only">Search books</label>
+            <input id="searchInput" type="search" placeholder="Search by name or author"
+                   class="rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                   aria-label="Search books" />
+
+            <label for="sortSelect" class="sr-only">Sort</label>
+            <select id="sortSelect"
+                    class="rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300">
+              <option value="newest">Newest</option>
+              <option value="name-asc">Name A → Z</option>
+              <option value="name-desc">Name Z → A</option>
+              <option value="author-asc">Author A → Z</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Book list -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3">Your Books</h2>
+      <div id="bookList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- cards inserted here by JS -->
+      </div>
+      <p id="emptyMsg" class="mt-4 text-sm text-slate-500 hidden">No books found. Add your first book above!</p>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 max-w-xs rounded-md bg-white shadow-lg p-3 hidden pointer-events-auto">
+    <div id="toastText" class="text-sm text-slate-800"></div>
+  </div>
+
+<script>
+  // --- Elements ---
+  const bookName = document.getElementById('bookName');
+  const bookAuthor = document.getElementById('bookAuthor');
+  const bookCategory = document.getElementById('bookCategory');
+  const saveBtn = document.getElementById('saveBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const bookList = document.getElementById('bookList');
+  const searchInput = document.getElementById('searchInput');
+  const sortSelect = document.getElementById('sortSelect');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+
+  // --- State ---
+  let editIndex = null; // null = new, number = editing index
+  let books = JSON.parse(localStorage.getItem('bookHolder')) || [];
+
+  // --- Utility: show toast ---
+  function showToast(message, duration = 2200) {
+    toastText.textContent = message;
+    toast.classList.remove('hidden');
+    toast.classList.add('animate-toast-in');
+    // remove after timeout
+    setTimeout(() => {
+      toast.classList.add('hidden');
+      toast.classList.remove('animate-toast-in');
+    }, duration);
+  }
+
+  // --- Save / Add / Update ---
+  saveBtn.addEventListener('click', () => {
+    const name = bookName.value.trim();
+    const author = bookAuthor.value.trim();
+    const category = bookCategory.value;
+
+    if (!name || !author || !category) {
+      showToast('Please fill all fields.');
+      return;
+    }
+
+    const bookObj = { name, author, category, createdAt: Date.now() };
+
+    if (editIndex === null) {
+      // add
+      books.push(bookObj);
+      showToast('Book added.');
+    } else {
+      // update
+      books[editIndex] = { ...books[editIndex], ...bookObj };
+      editIndex = null;
+      saveBtn.textContent = 'Save';
+      showToast('Book updated.');
+    }
+
+    // persist
+    localStorage.setItem('bookHolder', JSON.stringify(books));
+    // clear form and re-render
+    clearForm();
+    renderBooks();
+    // focus back to name for quick entry
+    bookName.focus();
+  });
+
+  // --- Clear form ---
+  clearBtn.addEventListener('click', clearForm);
+  function clearForm() {
+    bookName.value = '';
+    bookAuthor.value = '';
+    bookCategory.value = '';
+    editIndex = null;
+    saveBtn.textContent = 'Save';
+  }
+
+  // --- Render books ---
+  function renderBooks() {
+    // apply search
+    const q = (searchInput.value || '').trim().toLowerCase();
+    let filtered = books.filter(b => {
+      if (!q) return true;
+      return b.name.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.category.toLowerCase().includes(q);
+    });
+
+    // apply sort
+    const sort = sortSelect.value;
+    if (sort === 'newest') {
+      filtered.sort((a,b) => b.createdAt - a.createdAt);
+    } else if (sort === 'name-asc') {
+      filtered.sort((a,b) => a.name.localeCompare(b.name));
+    } else if (sort === 'name-desc') {
+      filtered.sort((a,b) => b.name.localeCompare(a.name));
+    } else if (sort === 'author-asc') {
+      filtered.sort((a,b) => a.author.localeCompare(b.author));
+    }
+
+    // render or show empty
+    bookList.innerHTML = '';
+    if (filtered.length === 0) {
+      emptyMsg.classList.remove('hidden');
+    } else {
+      emptyMsg.classList.add('hidden');
+      filtered.forEach((b, idx) => {
+        // Use a stable index reference: find index in original books array for actions
+        const origIndex = books.findIndex(x => x.createdAt === b.createdAt);
+
+        const card = document.createElement('article');
+        card.className = 'bg-white rounded-lg shadow p-4 animate-card-in flex flex-col justify-between';
+        card.innerHTML = `
+          <div>
+            <h3 class="text-md font-semibold text-slate-900">${escapeHtml(b.name)}</h3>
+            <p class="text-sm text-slate-600 mt-1">by <span class="font-medium">${escapeHtml(b.author)}</span></p>
+            <p class="text-xs inline-block mt-3 px-2 py-1 rounded-full text-slate-700 bg-slate-100">${escapeHtml(b.category)}</p>
+          </div>
+          <div class="mt-4 flex items-center justify-between gap-2">
+            <a href="#" class="text-sm text-indigo-600 hover:underline">Buy now</a>
+            <div class="flex gap-2">
+              <button class="editBtn inline-flex items-center gap-2 px-3 py-1 rounded-md bg-sky-600 text-white text-sm hover:bg-sky-700 transition" data-idx="${origIndex}">
+                Edit
+              </button>
+              <button class="deleteBtn inline-flex items-center gap-2 px-3 py-1 rounded-md bg-rose-500 text-white text-sm hover:bg-rose-600 transition" data-idx="${origIndex}">
+                Delete
+              </button>
+            </div>
+          </div>
+        `;
+
+        // add hover subtle transform
+        card.classList.add('hover:shadow-md', 'transition', 'transform', 'hover:-translate-y-1');
+
+        bookList.appendChild(card);
+      });
+    }
+
+    // attach event listeners to new buttons
+    document.querySelectorAll('.editBtn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const idx = Number(btn.dataset.idx);
+        startEdit(idx);
+      });
+    });
+    document.querySelectorAll('.deleteBtn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const idx = Number(btn.dataset.idx);
+        handleDelete(idx);
+      });
+    });
+  }
+
+  // --- Edit ---
+  function startEdit(index) {
+    const book = books[index];
+    if (!book) return;
+    bookName.value = book.name;
+    bookAuthor.value = book.author;
+    bookCategory.value = book.category;
+    editIndex = index;
+    saveBtn.textContent = 'Update';
+    bookName.focus();
+  }
+
+  // --- Delete ---
+  function handleDelete(index) {
+    if (!confirm('Are you sure you want to delete this book?')) return;
+    books.splice(index, 1);
+    localStorage.setItem('bookHolder', JSON.stringify(books));
+    renderBooks();
+    showToast('Book deleted.');
+  }
+
+  // --- Search debounce for smoother UX ---
+  let debounceTimer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(renderBooks, 240);
+  });
+
+  sortSelect.addEventListener('change', renderBooks);
+
+  // --- Helpers ---
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  // initial load
+  document.addEventListener('DOMContentLoaded', () => {
+    renderBooks();
+  });
+
+  // keyboard shortcut: Enter while in name field saves quickly
+  bookName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveBtn.click();
+    }
+  });
+
+</script>
+</body>
+</html>
